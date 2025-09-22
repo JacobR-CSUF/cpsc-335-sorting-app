@@ -65,7 +65,7 @@ SORTING_CONFIG = {
     'MAX_ARRAY_SIZE': 50,
     'MIN_VALUE': 10,
     'MAX_VALUE': 100,
-    'DEFAULT_SPEED': 500,  # milliseconds
+    'DEFAULT_SPEED': 10,  # milliseconds
     'SCROLL_SPEED': 20,
     'MAX_CONSOLE_LINES': 8,
 }
