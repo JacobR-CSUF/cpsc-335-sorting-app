@@ -41,6 +41,7 @@ class SortingVisualizer:
         self.paused = False
         self.sorted = False
         self.started = False
+        self.done_active = False
         self.speed = SORTING_CONFIG['DEFAULT_SPEED']
         self.current_indices = []
         self.console_messages = []
@@ -83,26 +84,31 @@ class SortingVisualizer:
         self.selected_algorithm = "Bubble Sort"
         self.algorithm_buttons = self._create_algorithm_buttons()
 
-        # Control buttons (centered)
+        # Control buttons
         self._initialize_control_buttons()
 
-        # Visualization panels
+        # Visualization panel
         self.viz_panel = pygame.Rect(30, 490, UI_DIMENSIONS['VIZ_PANEL_WIDTH'],
                                      UI_DIMENSIONS['VIZ_PANEL_HEIGHT'])
-        self.console_panel = pygame.Rect(450, 490, UI_DIMENSIONS['CONSOLE_WIDTH'],
+
+        # Console panel
+        self.console_panel = pygame.Rect(450, 360, UI_DIMENSIONS['CONSOLE_WIDTH'],
                                         UI_DIMENSIONS['CONSOLE_HEIGHT'])
 
         # DONE button
-        self.done_button = pygame.Rect((self.width - 120) // 2, 685, 120, 40)
+        self.done_button = pygame.Rect((self.width - 120) // 2, 680, 120, 40)
 
     def _initialize_control_buttons(self):
-        """Initialize control button positions (centered)"""
+        """Initialize control button positions (ABOVE visualization panel)"""
         btn_width = UI_DIMENSIONS['BUTTON_WIDTH']
         btn_height = UI_DIMENSIONS['BUTTON_HEIGHT']
         btn_spacing = UI_DIMENSIONS['BUTTON_SPACING']
-        total_width = (btn_width * 3) + (btn_spacing * 2)
-        start_x = (self.width - total_width) // 2
-        btn_y = 420
+
+        # Position buttons above the visualization panel
+        btn_y = 420  # Positioned between algorithm selection and viz panel
+
+        # Left-align buttons above the visualization panel
+        start_x = 30  # Align with visualization panel
 
         self.start_button = pygame.Rect(start_x, btn_y, btn_width, btn_height)
         self.pause_button = pygame.Rect(start_x + btn_width + btn_spacing, btn_y, btn_width, btn_height)
@@ -140,13 +146,14 @@ class SortingVisualizer:
         self.sorting = False
         self.paused = False
         self.started = False
+        self.done_active = False
         self.current_indices = []
         self.console_messages = []
         self.array_scroll_offset = 0
         self.sort_start_time = 0
         self.total_pause_duration = 0
 
-        # Use the actual selected algorithm name
+        # Display actual array
         algo_name = self.selected_algorithm.replace(" Sort", "")
         self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
         self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
@@ -162,7 +169,7 @@ class SortingVisualizer:
         """Start the sorting process and timer"""
         self.sort_start_time = time.time()
         self.total_pause_duration = 0
-        algo_name = self.selected_algorithm.replace(" Sort", "")
+        self.done_active = False  # Reset DONE button when starting
         self.add_console_message(f"sortingapp$ visualizing...")
 
     def pause_sorting(self):
@@ -183,6 +190,7 @@ class SortingVisualizer:
             self.add_console_message(f"sortingapp$ [{algo_name}] sort took {total_time:.2f} seconds to complete")
             self.add_console_message(f"sortingapp$ Sorted array: {self.sorting_array}")
             self.add_console_message("sortingapp$ cleaning up...")
+            self.done_active = True  # Activate DONE button
 
     def reset_sorting(self):
         """Reset the sorting state"""
@@ -191,6 +199,7 @@ class SortingVisualizer:
         self.paused = False
         self.sorted = False
         self.started = False
+        self.done_active = False
         self.current_indices = []
         self.console_messages = []
         self.array_scroll_offset = 0
@@ -202,6 +211,13 @@ class SortingVisualizer:
         self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
         self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
         self.add_console_message(f"sortingapp$ Original array: {self.array}")
+
+    def handle_done_click(self):
+        """Handle DONE button click"""
+        if self.done_active:
+            # Reset everything when DONE is clicked
+            self.generate_array()
+            self.done_active = False
 
     def draw(self):
         """Draw all UI components"""
@@ -218,9 +234,9 @@ class SortingVisualizer:
             self.array_scroll_max = max(0, scroll_max)
 
         self.ui.draw_algorithm_selection(self.algorithm_buttons, self.selected_algorithm)
-        self.ui.draw_control_buttons(self.start_button, self.pause_button, 
+        self.ui.draw_control_buttons(self.start_button, self.pause_button,
                                     self.reset_button, self.started, self.paused)
         self.ui.draw_visualization_panel(self.viz_panel, self.sorting_array,
                                         self.current_indices, self.sorting, self.sorted)
-        self.ui.draw_console_panel(self.console_panel, self.console_messages, self.done_button)
-
+        self.ui.draw_console_panel(self.console_panel, self.console_messages,
+                                  self.done_button, self.done_active)

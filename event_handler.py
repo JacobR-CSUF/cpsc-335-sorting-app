@@ -50,6 +50,11 @@ class EventHandler:
             self.app.scrollbar_dragging = True
             return sort_generator
 
+        # Check DONE button
+        if self.app.done_button.collidepoint(event.pos):
+            self.app.handle_done_click()
+            return None
+
         # Check input field
         if self.app.input_rect.collidepoint(event.pos):
             self.app.input_active = True

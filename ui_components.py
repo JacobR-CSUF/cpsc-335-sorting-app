@@ -249,8 +249,8 @@ class UIComponents:
 
             pygame.draw.rect(self.screen, color, (x, y, bar_width, bar_height))
 
-    def draw_console_panel(self, console_panel, console_messages, done_button):
-        """Draw the console output panel with text wrapping"""
+    def draw_console_panel(self, console_panel, console_messages, done_button, done_active=False):
+        """Draw the console output panel with text wrapping and DONE button"""
         pygame.draw.rect(self.screen, COLORS['CONSOLE_BG'], console_panel, border_radius=5)
 
         # Calculate available width for text (with padding)
@@ -283,8 +283,17 @@ class UIComponents:
             self.screen.blit(text, (console_panel.x + padding, console_panel.y + y_offset))
             y_offset += line_height
 
-        # Draw DONE button
-        pygame.draw.rect(self.screen, COLORS['DARK_GRAY'], done_button, border_radius=5)
+        # Draw DONE button (GREEN when active, DARK_GRAY otherwise)
+        button_color = COLORS['GREEN'] if done_active else COLORS['DARK_GRAY']
+        pygame.draw.rect(self.screen, button_color, done_button, border_radius=5)
+
+        # Add glow effect when active
+        if done_active:
+            # Draw a glowing border
+            glow_rect = pygame.Rect(done_button.x - 2, done_button.y - 2,
+                                   done_button.width + 4, done_button.height + 4)
+            pygame.draw.rect(self.screen, COLORS['BRIGHT_GREEN'], glow_rect, 2, border_radius=5)
+
         done_text = self.fonts['small'].render("DONE", True, COLORS['WHITE'])
         done_rect = done_text.get_rect(center=done_button.center)
         self.screen.blit(done_text, done_rect)

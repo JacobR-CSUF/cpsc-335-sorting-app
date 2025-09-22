@@ -15,6 +15,7 @@ COLORS = {
     'WHITE': (255, 255, 255),
     'BLACK': (0, 0, 0),
     'GREEN': (50, 205, 50),
+    'BRIGHT_GREEN': (0, 255, 0),
     'ORANGE': (255, 165, 0),
     'RED': (220, 20, 60),
     'GRAY': (192, 192, 192),
@@ -46,7 +47,7 @@ UI_DIMENSIONS = {
     'VIZ_PANEL_WIDTH': 400,
     'VIZ_PANEL_HEIGHT': 180,
     'CONSOLE_WIDTH': 420,
-    'CONSOLE_HEIGHT': 180,
+    'CONSOLE_HEIGHT': 310,
     'SCROLLBAR_WIDTH': 10,
     'SCROLLBAR_HEIGHT': 20,
 }
@@ -67,5 +68,5 @@ SORTING_CONFIG = {
     'MAX_VALUE': 100,
     'DEFAULT_SPEED': 10,  # milliseconds
     'SCROLL_SPEED': 20,
-    'MAX_CONSOLE_LINES': 8,
+    'MAX_CONSOLE_LINES': 16,
 }
