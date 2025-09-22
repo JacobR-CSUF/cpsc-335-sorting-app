@@ -45,15 +45,15 @@ class EventHandler:
 
     def _handle_mouse_down(self, event, sort_generator):
         """Handle mouse button down events"""
-        # Check scrollbar
-        if hasattr(self.app, 'scrollbar_rect') and self.app.scrollbar_rect.collidepoint(event.pos):
-            self.app.scrollbar_dragging = True
-            return sort_generator
-
         # Check DONE button
         if self.app.done_button.collidepoint(event.pos):
             self.app.handle_done_click()
             return None
+
+        # Check scrollbar
+        if hasattr(self.app, 'scrollbar_rect') and self.app.scrollbar_rect.collidepoint(event.pos):
+            self.app.scrollbar_dragging = True
+            return sort_generator
 
         # Check input field
         if self.app.input_rect.collidepoint(event.pos):
@@ -73,7 +73,6 @@ class EventHandler:
                 self.app.selected_algorithm = algo_data['name']
                 # Update console when algorithm is changed
                 if not self.app.started:
-                    # Regenerate console messages with new algorithm name
                     self.app.console_messages = []
                     algo_name = self.app.selected_algorithm.replace(" Sort", "")
                     self.app.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
@@ -82,23 +81,42 @@ class EventHandler:
 
         # Check control buttons
         if self.app.start_button.collidepoint(event.pos):
-            if not self.app.started and self.app.selected_algorithm == "Bubble Sort":
+            if not self.app.started:
                 self.app.sorting = True
                 self.app.paused = False
                 self.app.started = True
-                self.app.start_sorting()  # Start the timer
+                self.app.start_sorting()
+
+                # Import and select the correct sorting algorithm
                 from sorting_visualizers import SortingVisualizers
-                return SortingVisualizers.bubble_sort_visual(self.app.sorting_array, self.app)
+
+                algorithm_map = {
+                    "Bubble Sort": SortingVisualizers.bubble_sort_visual,
+                    "Bucket Sort": SortingVisualizers.bucket_sort_visual,
+                    "Counting Sort": SortingVisualizers.counting_sort_visual,
+                    "Heap Sort": SortingVisualizers.heap_sort_visual,
+                    "Insertion Sort": SortingVisualizers.insertion_sort_visual,
+                    "Merge Sort": SortingVisualizers.merge_sort_visual,
+                    "Quick Sort": SortingVisualizers.quick_sort_visual,
+                    "Radix Sort": SortingVisualizers.radix_sort_visual,
+                }
+
+                if self.app.selected_algorithm in algorithm_map:
+                    return algorithm_map[self.app.selected_algorithm](self.app.sorting_array, self.app)
+                else:
+                    self.app.add_console_message(f"sortingapp$ Algorithm not implemented yet")
+                    self.app.started = False
+                    self.app.sorting = False
+                    return None
 
         elif self.app.pause_button.collidepoint(event.pos):
             if self.app.started and self.app.sorting:
                 if not self.app.paused:
-                    self.app.pause_sorting()  # Track pause time
+                    self.app.pause_sorting()
                     self.app.paused = True
                 else:
-                    self.app.resume_sorting()  # Resume and track duration
+                    self.app.resume_sorting()
                     self.app.paused = False
-
 
         elif self.app.reset_button.collidepoint(event.pos):
             if self.app.started:
@@ -137,11 +155,3 @@ class EventHandler:
             else:
                 if event.unicode.isdigit():
                     self.app.input_text += event.unicode
-
-        # Arrow key scrolling
-        elif self.app.array_display_rect.collidepoint(pygame.mouse.get_pos()):
-            if event.key == pygame.K_LEFT:
-                self.app.array_scroll_offset = max(0, self.app.array_scroll_offset - 20)
-            elif event.key == pygame.K_RIGHT:
-                self.app.array_scroll_offset = min(self.app.array_scroll_max, 
-                                                  self.app.array_scroll_offset + 20)
