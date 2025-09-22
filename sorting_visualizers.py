@@ -1,24 +1,31 @@
 """
 Sorting algorithm visualization generators
-Contains step-by-step sorting implementations
+Uses algorithms from SortAlgorithm folder
 """
+
+from SortAlgorithm.BubbleSortAlgorithm import bubble_sort
 
 class SortingVisualizers:
     @staticmethod
     def bubble_sort_visual(sorting_array, app_instance):
-        """Generator for bubble sort visualization"""
+        """
+        Generator for bubble sort visualization
+        No longer outputs step-by-step time messages
+        """
         n = len(sorting_array)
-        app_instance.add_console_message("sortingapp$ visualizing...")
 
         for i in range(n):
             swapped = False
 
             for j in range(0, n-i-1):
-                if not app_instance.sorting or app_instance.paused:
+                if not app_instance.sorting:
                     yield False
 
+                # Check if paused (but don't stop the generator)
+                while app_instance.paused:
+                    yield True  # Keep yielding while paused
+
                 app_instance.current_indices = [j, j+1]
-                app_instance.add_console_message(f"sortingapp$ [type] took #{j} seconds")
 
                 if sorting_array[j] > sorting_array[j+1]:
                     sorting_array[j], sorting_array[j+1] = sorting_array[j+1], sorting_array[j]
@@ -29,24 +36,17 @@ class SortingVisualizers:
             if not swapped:
                 break
 
-        app_instance.add_console_message("sortingapp$ cleaning up...")
+        # Sorting complete - calculate and display total time
+        app_instance.complete_sorting()
         app_instance.sorted = True
         app_instance.sorting = False
         app_instance.current_indices = []
         yield False
 
-    # Future sorting algorithms will be added here
     @staticmethod
-    def quick_sort_visual(sorting_array, app_instance):
-        """Placeholder for quick sort visualization"""
-        pass
-
-    @staticmethod
-    def merge_sort_visual(sorting_array, app_instance):
-        """Placeholder for merge sort visualization"""
-        pass
-
-    @staticmethod
-    def insertion_sort_visual(sorting_array, app_instance):
-        """Placeholder for insertion sort visualization"""
-        pass
+    def use_original_bubble_sort(array):
+        """
+        Use the original bubble_sort from SortAlgorithm folder
+        for non-visual sorting (instant sort)
+        """
+        return bubble_sort(array.copy())
