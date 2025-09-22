@@ -11,10 +11,52 @@ class UIComponents:
         self.screen = screen
         self.fonts = fonts
 
+    def wrap_text(self, text, font, max_width):
+        """
+        Wrap text to fit within the specified width
+        Returns a list of text lines
+        """
+        words = text.split(' ')
+        lines = []
+        current_line = []
+
+        for word in words:
+            # Test if adding this word exceeds max width
+            test_line = ' '.join(current_line + [word])
+            text_width = font.size(test_line)[0]
+
+            if text_width <= max_width:
+                current_line.append(word)
+            else:
+                # Current line is full, start a new line
+                if current_line:
+                    lines.append(' '.join(current_line))
+                    current_line = [word]
+                else:
+                    # Single word is too long, we need to break it
+                    # This handles cases where a single word exceeds max_width
+                    chars = list(word)
+                    temp_word = ''
+                    for char in chars:
+                        if font.size(temp_word + char)[0] <= max_width:
+                            temp_word += char
+                        else:
+                            if temp_word:
+                                lines.append(temp_word)
+                                temp_word = char
+                    if temp_word:
+                        current_line = [temp_word]
+
+        # Add the last line
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        return lines if lines else [text]  # Return original if no wrapping needed
+
     def draw_header(self, width):
         """Draw the header section"""
         header_rect = pygame.Rect(
-            UI_DIMENSIONS['HEADER_MARGIN'], 
+            UI_DIMENSIONS['HEADER_MARGIN'],
             UI_DIMENSIONS['HEADER_MARGIN'],
             width - 2 * UI_DIMENSIONS['HEADER_MARGIN'],
             UI_DIMENSIONS['HEADER_HEIGHT']
@@ -56,7 +98,7 @@ class UIComponents:
 
         return pygame.Rect(230, 120, 120, 30)  # Return randomize rect for click detection
 
-    def draw_array_display(self, array_display_rect, array_content_rect, 
+    def draw_array_display(self, array_display_rect, array_content_rect,
                           sorting_array, array_scroll_offset, array_scroll_max):
         """Draw the array display with scrolling support"""
         # Draw main container
@@ -114,7 +156,7 @@ class UIComponents:
             thumb_y_range = scrollbar_track.height - thumb_height
             thumb_y = scrollbar_track.y + int((scroll_offset / scroll_max) * thumb_y_range)
 
-            thumb_rect = pygame.Rect(scrollbar_track.x, thumb_y, 
+            thumb_rect = pygame.Rect(scrollbar_track.x, thumb_y,
                                     scrollbar_track.width, thumb_height)
             pygame.draw.rect(self.screen, COLORS['GRAY'], thumb_rect, border_radius=5)
 
@@ -137,7 +179,7 @@ class UIComponents:
             text = self.fonts['small'].render(algo_data['name'], True, COLORS['BLACK'])
             self.screen.blit(text, (algo_data['radio'].x + 25, algo_data['radio'].y))
 
-    def draw_control_buttons(self, start_btn, pause_btn, reset_btn, 
+    def draw_control_buttons(self, start_btn, pause_btn, reset_btn,
                            started, paused):
         """Draw control buttons with proper states"""
         # START button
@@ -169,13 +211,13 @@ class UIComponents:
         bar_spacing = 8
 
         pygame.draw.rect(self.screen, color,
-                        (center[0] - bar_spacing - bar_width//2, 
+                        (center[0] - bar_spacing - bar_width//2,
                          center[1] - bar_height//2, bar_width, bar_height))
         pygame.draw.rect(self.screen, color,
                         (center[0] + bar_spacing - bar_width//2,
                          center[1] - bar_height//2, bar_width, bar_height))
 
-    def draw_visualization_panel(self, viz_panel, sorting_array, current_indices, 
+    def draw_visualization_panel(self, viz_panel, sorting_array, current_indices,
                                 sorting, sorted_flag):
         """Draw the bar chart visualization panel"""
         pygame.draw.rect(self.screen, COLORS['GRAY'], viz_panel, border_radius=5)
@@ -208,15 +250,38 @@ class UIComponents:
             pygame.draw.rect(self.screen, color, (x, y, bar_width, bar_height))
 
     def draw_console_panel(self, console_panel, console_messages, done_button):
-        """Draw the console output panel"""
+        """Draw the console output panel with text wrapping"""
         pygame.draw.rect(self.screen, COLORS['CONSOLE_BG'], console_panel, border_radius=5)
 
-        # Draw messages
-        y_offset = 10
+        # Calculate available width for text (with padding)
+        padding = 10
+        max_text_width = console_panel.width - (padding * 2)
+
+        # Process all messages and wrap them
+        all_lines = []
         for message in console_messages:
-            text = self.fonts['console'].render(message, True, COLORS['CONSOLE_GREEN'])
-            self.screen.blit(text, (console_panel.x + 10, console_panel.y + y_offset))
-            y_offset += 18
+            wrapped_lines = self.wrap_text(message, self.fonts['console'], max_text_width)
+            all_lines.extend(wrapped_lines)
+
+        # Calculate line height and max visible lines
+        line_height = 18
+        max_visible_lines = (console_panel.height - (padding * 2)) // line_height
+
+        # Get the lines to display (most recent if there are too many)
+        if len(all_lines) > max_visible_lines:
+            display_lines = all_lines[-max_visible_lines:]
+        else:
+            display_lines = all_lines
+
+        # Draw the wrapped lines
+        y_offset = padding
+        for line in display_lines:
+            if y_offset + line_height > console_panel.height - padding:
+                break  # Stop if we've reached the bottom
+
+            text = self.fonts['console'].render(line, True, COLORS['CONSOLE_GREEN'])
+            self.screen.blit(text, (console_panel.x + padding, console_panel.y + y_offset))
+            y_offset += line_height
 
         # Draw DONE button
         pygame.draw.rect(self.screen, COLORS['DARK_GRAY'], done_button, border_radius=5)
