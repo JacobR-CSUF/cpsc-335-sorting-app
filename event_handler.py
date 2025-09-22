@@ -68,7 +68,12 @@ class EventHandler:
                 self.app.selected_algorithm = algo_data['name']
                 # Update console when algorithm is changed
                 if not self.app.started:
-                    self.app.generate_array()
+                    # Regenerate console messages with new algorithm name
+                    self.app.console_messages = []
+                    algo_name = self.app.selected_algorithm.replace(" Sort", "")
+                    self.app.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
+                    self.app.add_console_message(f"sortingapp$ utilizing array of size {self.app.array_size}")
+                    self.app.add_console_message(f"sortingapp$ Original array: {self.app.array}")
 
         # Check control buttons
         if self.app.start_button.collidepoint(event.pos):
@@ -89,14 +94,10 @@ class EventHandler:
                     self.app.resume_sorting()  # Resume and track duration
                     self.app.paused = False
 
+
         elif self.app.reset_button.collidepoint(event.pos):
             if self.app.started:
                 self.app.reset_sorting()
-                # Re-display initial messages with current algorithm
-                algo_name = self.app.selected_algorithm.replace(" Sort", "")
-                self.app.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
-                self.app.add_console_message(f"sortingapp$ utilizing array of size {self.app.array_size}")
-                self.app.add_console_message(f"sortingapp$ [displays entire array]")
                 return None
 
         return sort_generator

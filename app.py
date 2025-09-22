@@ -150,7 +150,7 @@ class SortingVisualizer:
         algo_name = self.selected_algorithm.replace(" Sort", "")
         self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
         self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
-        self.add_console_message(f"sortingapp$ [displays entire array]")
+        self.add_console_message(f"sortingapp$ Original array: {self.array}")
 
     def add_console_message(self, message):
         """Add a message to the console output"""
@@ -181,6 +181,7 @@ class SortingVisualizer:
             total_time = time.time() - self.sort_start_time - self.total_pause_duration
             algo_name = self.selected_algorithm.replace(" Sort", "")
             self.add_console_message(f"sortingapp$ [{algo_name}] sort took {total_time:.2f} seconds to complete")
+            self.add_console_message(f"sortingapp$ Sorted array: {self.sorting_array}")
             self.add_console_message("sortingapp$ cleaning up...")
 
     def reset_sorting(self):
@@ -195,6 +196,12 @@ class SortingVisualizer:
         self.array_scroll_offset = 0
         self.sort_start_time = 0
         self.total_pause_duration = 0
+
+        # Re-display initial messages with actual array
+        algo_name = self.selected_algorithm.replace(" Sort", "")
+        self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
+        self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
+        self.add_console_message(f"sortingapp$ Original array: {self.array}")
 
     def draw(self):
         """Draw all UI components"""
@@ -216,3 +223,4 @@ class SortingVisualizer:
         self.ui.draw_visualization_panel(self.viz_panel, self.sorting_array,
                                         self.current_indices, self.sorting, self.sorted)
         self.ui.draw_console_panel(self.console_panel, self.console_messages, self.done_button)
+
