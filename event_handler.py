@@ -13,7 +13,7 @@ class EventHandler:
     def handle_events(self, event, sort_generator):
         """Main event handling dispatcher"""
         if event.type == pygame.QUIT:
-            return False, sort_generator  # Signal to quit
+            return False, sort_generator
 
         elif event.type == pygame.MOUSEWHEEL:
             return self._handle_mousewheel(event), sort_generator
@@ -39,7 +39,7 @@ class EventHandler:
         """Handle mouse wheel scrolling"""
         if self.app.array_display_rect.collidepoint(pygame.mouse.get_pos()):
             self.app.array_scroll_offset -= event.y * SORTING_CONFIG['SCROLL_SPEED']
-            self.app.array_scroll_offset = max(0, min(self.app.array_scroll_offset, 
+            self.app.array_scroll_offset = max(0, min(self.app.array_scroll_offset,
                                                       self.app.array_scroll_max))
         return True
 
@@ -66,6 +66,9 @@ class EventHandler:
         for algo_data in self.app.algorithm_buttons:
             if algo_data['rect'].collidepoint(event.pos):
                 self.app.selected_algorithm = algo_data['name']
+                # Update console when algorithm is changed
+                if not self.app.started:
+                    self.app.generate_array()
 
         # Check control buttons
         if self.app.start_button.collidepoint(event.pos):
@@ -73,16 +76,27 @@ class EventHandler:
                 self.app.sorting = True
                 self.app.paused = False
                 self.app.started = True
+                self.app.start_sorting()  # Start the timer
                 from sorting_visualizers import SortingVisualizers
                 return SortingVisualizers.bubble_sort_visual(self.app.sorting_array, self.app)
 
         elif self.app.pause_button.collidepoint(event.pos):
             if self.app.started and self.app.sorting:
-                self.app.paused = not self.app.paused
+                if not self.app.paused:
+                    self.app.pause_sorting()  # Track pause time
+                    self.app.paused = True
+                else:
+                    self.app.resume_sorting()  # Resume and track duration
+                    self.app.paused = False
 
         elif self.app.reset_button.collidepoint(event.pos):
             if self.app.started:
                 self.app.reset_sorting()
+                # Re-display initial messages with current algorithm
+                algo_name = self.app.selected_algorithm.replace(" Sort", "")
+                self.app.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
+                self.app.add_console_message(f"sortingapp$ utilizing array of size {self.app.array_size}")
+                self.app.add_console_message(f"sortingapp$ [displays entire array]")
                 return None
 
         return sort_generator

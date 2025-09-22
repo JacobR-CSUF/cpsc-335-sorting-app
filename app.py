@@ -4,6 +4,7 @@ Main Application Class for Sorting Algorithm Visualizer
 
 import pygame
 import random
+import time
 from config import *
 from ui_components import UIComponents
 from event_handler import EventHandler
@@ -45,6 +46,11 @@ class SortingVisualizer:
         self.console_messages = []
         self.max_console_lines = SORTING_CONFIG['MAX_CONSOLE_LINES']
 
+        # Timing variables
+        self.sort_start_time = 0
+        self.pause_time = 0
+        self.total_pause_duration = 0
+
         # Scroll variables
         self.array_scroll_offset = 0
         self.array_scroll_max = 0
@@ -67,9 +73,9 @@ class SortingVisualizer:
     def _initialize_ui_elements(self):
         """Initialize all UI element positions"""
         # Input elements
-        self.input_rect = pygame.Rect(60, 120, UI_DIMENSIONS['INPUT_WIDTH'], 
+        self.input_rect = pygame.Rect(60, 120, UI_DIMENSIONS['INPUT_WIDTH'],
                                       UI_DIMENSIONS['INPUT_HEIGHT'])
-        self.array_display_rect = pygame.Rect(30, 170, self.width - 60, 
+        self.array_display_rect = pygame.Rect(30, 170, self.width - 60,
                                              UI_DIMENSIONS['ARRAY_DISPLAY_HEIGHT'])
         self.array_content_rect = pygame.Rect(35, 175, self.width - 80, 50)
 
@@ -126,8 +132,8 @@ class SortingVisualizer:
 
     def generate_array(self):
         """Generate a random array for sorting"""
-        self.array = [random.randint(SORTING_CONFIG['MIN_VALUE'], 
-                                    SORTING_CONFIG['MAX_VALUE']) 
+        self.array = [random.randint(SORTING_CONFIG['MIN_VALUE'],
+                                    SORTING_CONFIG['MAX_VALUE'])
                      for _ in range(self.array_size)]
         self.sorting_array = self.array.copy()
         self.sorted = False
@@ -137,7 +143,12 @@ class SortingVisualizer:
         self.current_indices = []
         self.console_messages = []
         self.array_scroll_offset = 0
-        self.add_console_message("sortingapp$ running [type] sort...")
+        self.sort_start_time = 0
+        self.total_pause_duration = 0
+
+        # Use the actual selected algorithm name
+        algo_name = self.selected_algorithm.replace(" Sort", "")
+        self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
         self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
         self.add_console_message(f"sortingapp$ [displays entire array]")
 
@@ -146,6 +157,31 @@ class SortingVisualizer:
         self.console_messages.append(message)
         if len(self.console_messages) > self.max_console_lines:
             self.console_messages.pop(0)
+
+    def start_sorting(self):
+        """Start the sorting process and timer"""
+        self.sort_start_time = time.time()
+        self.total_pause_duration = 0
+        algo_name = self.selected_algorithm.replace(" Sort", "")
+        self.add_console_message(f"sortingapp$ visualizing...")
+
+    def pause_sorting(self):
+        """Pause the sorting and track pause time"""
+        if not self.paused:
+            self.pause_time = time.time()
+
+    def resume_sorting(self):
+        """Resume sorting and accumulate pause duration"""
+        if self.paused:
+            self.total_pause_duration += time.time() - self.pause_time
+
+    def complete_sorting(self):
+        """Calculate and display total sorting time"""
+        if self.sort_start_time > 0:
+            total_time = time.time() - self.sort_start_time - self.total_pause_duration
+            algo_name = self.selected_algorithm.replace(" Sort", "")
+            self.add_console_message(f"sortingapp$ [{algo_name}] sort took {total_time:.2f} seconds to complete")
+            self.add_console_message("sortingapp$ cleaning up...")
 
     def reset_sorting(self):
         """Reset the sorting state"""
@@ -157,6 +193,8 @@ class SortingVisualizer:
         self.current_indices = []
         self.console_messages = []
         self.array_scroll_offset = 0
+        self.sort_start_time = 0
+        self.total_pause_duration = 0
 
     def draw(self):
         """Draw all UI components"""
