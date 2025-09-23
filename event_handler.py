@@ -94,6 +94,7 @@ class EventHandler:
                     "Bubble Sort": SortingVisualizers.bubble_sort_visual,
                     "Bucket Sort": SortingVisualizers.bucket_sort_visual,
                     "Counting Sort": SortingVisualizers.counting_sort_visual,
+                    "Quick Select": SortingVisualizers.quick_select_visual,
                     "Heap Sort": SortingVisualizers.heap_sort_visual,
                     "Insertion Sort": SortingVisualizers.insertion_sort_visual,
                     "Merge Sort": SortingVisualizers.merge_sort_visual,

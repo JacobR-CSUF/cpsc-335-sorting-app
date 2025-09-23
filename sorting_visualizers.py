@@ -11,6 +11,7 @@ from SortAlgorithm.InsertionAlgorithm import insertion_sort
 from SortAlgorithm.MergeSortAlgorithm import merge_sort, merge
 from SortAlgorithm.QuickSortAlogirthm import quick_sort
 from SortAlgorithm.RadixAlgorithm import radix_sort_lsd
+from SortAlgorithm.QuickSelectAlgorithm import partition
 
 class SortingVisualizers:
     @staticmethod
@@ -145,6 +146,74 @@ class SortingVisualizers:
         app_instance.sorting = False
         app_instance.current_indices = []
         yield False
+
+    @staticmethod
+    def quick_select_visual(sorting_array, app_instance):
+        """Generator for quick select visualization (adapted for sorting)"""
+        n = len(sorting_array)
+
+        # We'll use quick select to find each element in order
+        # This essentially becomes a selection sort using quick select
+        for k in range(n):
+            # Find the k-th smallest element
+            yield from SortingVisualizers._quick_select_helper_visual(
+                sorting_array, 0, n - 1, k, app_instance
+            )
+
+            # After finding k-th element, it's in its correct position
+            # Highlight it briefly
+            app_instance.current_indices = [k]
+            yield True
+
+        app_instance.complete_sorting()
+        app_instance.sorted = True
+        app_instance.sorting = False
+        app_instance.current_indices = []
+        yield False
+
+    @staticmethod
+    def _quick_select_helper_visual(arr, low, high, k, app_instance):
+        """Helper for quick select with visualization"""
+        if low <= high:
+            # Partition visualization
+            pivot_idx = high
+            pivot = arr[pivot_idx]
+            i = low
+
+            for j in range(low, high):
+                if not app_instance.sorting:
+                    yield False
+                    return
+                while app_instance.paused:
+                    yield True
+
+                app_instance.current_indices = [j, pivot_idx]
+
+                if arr[j] <= pivot:
+                    arr[i], arr[j] = arr[j], arr[i]
+                    app_instance.current_indices = [i, j]
+                    i += 1
+                    yield True
+
+            # Place pivot in correct position
+            arr[i], arr[high] = arr[high], arr[i]
+            app_instance.current_indices = [i, high]
+            yield True
+
+            # Recursively select from appropriate partition
+            if i == k:
+                # Found k-th element
+                return
+            elif i > k:
+                # k-th element is in left partition
+                yield from SortingVisualizers._quick_select_helper_visual(
+                    arr, low, i - 1, k, app_instance
+                )
+            else:
+                # k-th element is in right partition
+                yield from SortingVisualizers._quick_select_helper_visual(
+                    arr, i + 1, high, k, app_instance
+                )
 
     @staticmethod
     def heap_sort_visual(sorting_array, app_instance):

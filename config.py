@@ -54,7 +54,7 @@ UI_DIMENSIONS = {
 
 # Algorithm Names
 ALGORITHMS = [
-    "Bubble Sort", "Bucket Sort", "Counting Sort",
+    "Bubble Sort", "Bucket Sort", "Counting Sort", "Quick Select",
     "Heap Sort", "Insertion Sort", "Merge Sort",
     "Quick Sort", "Radix Sort", ""  # Empty for layout
 ]

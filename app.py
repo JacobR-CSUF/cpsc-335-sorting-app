@@ -118,9 +118,9 @@ class SortingVisualizer:
     def _create_algorithm_buttons(self):
         """Create algorithm button positions"""
         buttons = []
-        start_x = 80
+        start_x = 60
         start_y = 270
-        cols = 3
+        cols = 4
         row_height = 40
         col_width = 180
 
