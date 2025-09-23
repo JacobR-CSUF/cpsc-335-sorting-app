@@ -1,6 +1,7 @@
 """
 Main Application Class for Sorting Algorithm Visualizer
 """
+import sys
 
 import pygame
 import random
@@ -95,8 +96,8 @@ class SortingVisualizer:
         self.console_panel = pygame.Rect(450, 360, UI_DIMENSIONS['CONSOLE_WIDTH'],
                                         UI_DIMENSIONS['CONSOLE_HEIGHT'])
 
-        # DONE button
-        self.done_button = pygame.Rect((self.width - 120) // 2, 680, 120, 40)
+        # QUIT button
+        self.quit_button = pygame.Rect((self.width - 120) // 2, 680, 120, 40)
 
     def _initialize_control_buttons(self):
         """Initialize control button positions (ABOVE visualization panel)"""
@@ -146,7 +147,6 @@ class SortingVisualizer:
         self.sorting = False
         self.paused = False
         self.started = False
-        self.done_active = False
         self.current_indices = []
         self.console_messages = []
         self.array_scroll_offset = 0
@@ -190,7 +190,6 @@ class SortingVisualizer:
             self.add_console_message(f"sortingapp$ [{algo_name}] sort took {total_time:.2f} seconds to complete")
             self.add_console_message(f"sortingapp$ Sorted array: {self.sorting_array}")
             self.add_console_message("sortingapp$ cleaning up...")
-            self.done_active = True  # Activate DONE button
 
     def reset_sorting(self):
         """Reset the sorting state"""
@@ -199,7 +198,6 @@ class SortingVisualizer:
         self.paused = False
         self.sorted = False
         self.started = False
-        self.done_active = False
         self.current_indices = []
         self.console_messages = []
         self.array_scroll_offset = 0
@@ -212,12 +210,10 @@ class SortingVisualizer:
         self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
         self.add_console_message(f"sortingapp$ Original array: {self.array}")
 
-    def handle_done_click(self):
-        """Handle DONE button click"""
-        if self.done_active:
-            # Reset everything when DONE is clicked
-            self.generate_array()
-            self.done_active = False
+    def quit_application(self):
+        """Quit the application"""
+        pygame.quit()
+        sys.exit()
 
     def draw(self):
         """Draw all UI components"""
@@ -238,5 +234,5 @@ class SortingVisualizer:
                                     self.reset_button, self.started, self.paused)
         self.ui.draw_visualization_panel(self.viz_panel, self.sorting_array,
                                         self.current_indices, self.sorting, self.sorted)
-        self.ui.draw_console_panel(self.console_panel, self.console_messages,
-                                  self.done_button, self.done_active)
+        self.ui.draw_console_panel(self.console_panel, self.console_messages)
+        self.ui.draw_quit_button(self.quit_button)

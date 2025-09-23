@@ -45,9 +45,9 @@ class EventHandler:
 
     def _handle_mouse_down(self, event, sort_generator):
         """Handle mouse button down events"""
-        # Check DONE button
-        if self.app.done_button.collidepoint(event.pos):
-            self.app.handle_done_click()
+        # Check QUIT button
+        if self.app.quit_button.collidepoint(event.pos):
+            self.app.quit_application()
             return None
 
         # Check scrollbar
