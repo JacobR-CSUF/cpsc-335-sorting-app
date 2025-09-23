@@ -1,17 +1,6 @@
 """
 Sorting algorithm visualization generators
-Uses algorithms from SortAlgorithm folder
 """
-
-from SortAlgorithm.BubbleSortAlgorithm import bubble_sort
-from SortAlgorithm.BucketSortAlgorithm import bucket_sort
-from SortAlgorithm.CountingSortAlgorithm import counting_sort
-from SortAlgorithm.HeapSortAlgorithm import heap_sort
-from SortAlgorithm.InsertionAlgorithm import insertion_sort
-from SortAlgorithm.MergeSortAlgorithm import merge_sort, merge
-from SortAlgorithm.QuickSortAlogirthm import quick_sort
-from SortAlgorithm.RadixAlgorithm import radix_sort_lsd
-from SortAlgorithm.QuickSelectAlgorithm import partition
 
 class SortingVisualizers:
     @staticmethod
