@@ -142,7 +142,7 @@ class EventHandler:
     def _handle_keydown(self, event):
         """Handle keyboard input"""
         if self.app.input_active:
-            if event.key == pygame.K_RETURN:
+            if event.key in [pygame.K_RETURN, pygame.K_KP_ENTER]:
                 try:
                     new_size = int(self.app.input_text)
                     if SORTING_CONFIG['MIN_ARRAY_SIZE'] <= new_size <= SORTING_CONFIG['MAX_ARRAY_SIZE']:
