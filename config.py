@@ -62,9 +62,9 @@ ALGORITHMS = [
 # Sorting Settings
 SORTING_CONFIG = {
     'DEFAULT_ARRAY_SIZE': 10,
-    'MIN_ARRAY_SIZE': 5,
+    'MIN_ARRAY_SIZE': 0,
     'MAX_ARRAY_SIZE': 50,
-    'MIN_VALUE': 10,
+    'MIN_VALUE': 0,
     'MAX_VALUE': 100,
     'DEFAULT_SPEED': 10,  # milliseconds
     'SCROLL_SPEED': 20,
