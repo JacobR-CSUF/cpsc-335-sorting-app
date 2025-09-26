@@ -50,6 +50,35 @@ class EventHandler:
             self.app.quit_application()
             return None
 
+        # Check array display for editing (only if not locked)
+        if not self.app.locked and self.app.array_display_rect.collidepoint(event.pos):
+            self.app.array_input_active = True
+            self.app.editing_array = True
+            self.app.input_active = False  # Deactivate element count input
+
+            # Initialize editing text if starting to edit
+            if not self.app.array_input_text:
+                self.app.array_input_text = str(self.app.array)[1:-1] if self.app.array else ""
+                self.app.cursor_position = len(self.app.array_input_text)
+
+            return sort_generator
+
+        # Check element count input field
+        if not self.app.locked and self.app.input_rect.collidepoint(event.pos):
+            self.app.input_active = True
+            self.app.array_input_active = False
+            self.app.editing_array = False
+        else:
+            # Click outside both inputs
+            if not self.app.array_display_rect.collidepoint(event.pos):
+                self.app.input_active = False
+                self.app.array_input_active = False
+                self.app.editing_array = False
+
+                # Apply changes if there were any
+                if self.app.editing_array:
+                    self.app.update_array_from_text()
+
         # Check scrollbar
         if hasattr(self.app, 'scrollbar_rect') and self.app.scrollbar_rect.collidepoint(event.pos):
             self.app.scrollbar_dragging = True
@@ -141,7 +170,13 @@ class EventHandler:
 
     def _handle_keydown(self, event):
         """Handle keyboard input"""
-        if self.app.input_active:
+        # Handle array editing input
+        if self.app.array_input_active and self.app.editing_array and not self.app.locked:
+            self.app.handle_array_input(event)
+            return
+
+        # Handle element count input
+        if self.app.input_active and not self.app.locked:
             if event.key in [pygame.K_RETURN, pygame.K_KP_ENTER]:
                 try:
                     new_size = int(self.app.input_text)
@@ -155,4 +190,7 @@ class EventHandler:
                 self.app.input_text = self.app.input_text[:-1]
             else:
                 if event.unicode.isdigit():
-                    self.app.input_text += event.unicode
+                    # Check if new size would be valid
+                    test_size = int(self.app.input_text + event.unicode) if self.app.input_text else int(event.unicode)
+                    if test_size <= SORTING_CONFIG['MAX_ARRAY_SIZE']:
+                        self.app.input_text += event.unicode

@@ -127,6 +127,96 @@ class UIComponents:
 
         return needs_scroll, text_width - available_width if needs_scroll else 0
 
+    def draw_editable_array_display(self, display_rect, content_rect, array,
+                                    input_text, is_active, cursor_pos,
+                                    scroll_offset, scroll_max, locked, editing):
+        """Draw editable array display with dynamic brackets"""
+        # Draw container
+        border_color = COLORS['BLUE_HEADER'] if is_active and not locked else (
+            COLORS['DISABLED_GRAY'] if locked else COLORS['BLACK'])
+        pygame.draw.rect(self.screen, COLORS['WHITE'], display_rect, border_radius=5)
+        pygame.draw.rect(self.screen, border_color, display_rect, 2, border_radius=5)
+
+        # Create display text with brackets
+        if editing and is_active:
+            # Show cursor and editing text
+            display_text = f"[{input_text}]"
+
+            # Calculate cursor position in display
+            cursor_display_pos = cursor_pos + 1  # +1 for opening bracket
+
+            # Render text
+            text_surface = self.fonts['medium'].render(display_text, True, COLORS['BLACK'])
+
+            # Calculate cursor position
+            text_before_cursor = f"[{input_text[:cursor_pos]}"
+            cursor_x = self.fonts['medium'].size(text_before_cursor)[0]
+
+        else:
+            # Normal display
+            display_text = str(array)
+            text_surface = self.fonts['medium'].render(display_text, True, COLORS['BLACK'])
+            cursor_x = -1  # No cursor
+
+        # Calculate scrolling
+        text_width = text_surface.get_width()
+        available_width = content_rect.width - 20
+        needs_scroll = text_width > available_width
+
+        # Set clipping
+        clip_rect = pygame.Rect(content_rect.x, content_rect.y,
+                                content_rect.width - 20, content_rect.height)
+        self.screen.set_clip(clip_rect)
+
+        # Draw text with scroll offset
+        if needs_scroll:
+            x_pos = content_rect.x - scroll_offset
+
+            # Auto-scroll to cursor if editing
+            if editing and is_active:
+                cursor_abs_x = x_pos + cursor_x
+                if cursor_abs_x < content_rect.x:
+                    scroll_offset = max(0, cursor_x - 50)
+                elif cursor_abs_x > content_rect.x + available_width - 50:
+                    scroll_offset = min(text_width - available_width + 20,
+                                        cursor_x - available_width + 100)
+        else:
+            # Center the text
+            x_pos = display_rect.centerx - text_width // 2
+            scroll_offset = 0
+
+        # Draw the text
+        self.screen.blit(text_surface, (x_pos, content_rect.y + 10))
+
+        # Draw cursor if editing
+        if editing and is_active and cursor_x >= 0:
+            cursor_screen_x = x_pos + cursor_x
+            if content_rect.x <= cursor_screen_x <= content_rect.x + available_width:
+                # Blinking cursor
+                if pygame.time.get_ticks() % 1000 < 500:
+                    pygame.draw.line(self.screen, COLORS['BLACK'],
+                                     (cursor_screen_x, content_rect.y + 5),
+                                     (cursor_screen_x, content_rect.y + 35), 2)
+
+        # Remove clipping
+        self.screen.set_clip(None)
+
+        # Draw scrollbar if needed
+        if needs_scroll and not locked:
+            self._draw_scrollbar(display_rect, scroll_offset,
+                                 text_width - available_width + 20)
+
+        # Draw hint text if editing
+        if editing and is_active:
+            hint_text = self.fonts['small'].render(
+                "Type numbers separated by commas. Press Enter to confirm, Esc to cancel.",
+                True, COLORS['GRAY']
+            )
+            hint_rect = hint_text.get_rect(midtop=(display_rect.centerx, display_rect.bottom + 5))
+            self.screen.blit(hint_text, hint_rect)
+
+        return needs_scroll, text_width - available_width + 20 if needs_scroll else 0
+
     def _draw_scrollable_array(self, display_rect, content_rect, text_surface,
                                scroll_offset, scroll_max, available_width, text_width):
         """Helper method to draw scrollable array content"""
@@ -289,3 +379,41 @@ class UIComponents:
         quit_text = self.fonts['small'].render("QUIT", True, COLORS['WHITE'])
         quit_rect = quit_text.get_rect(center=quit_button.center)
         self.screen.blit(quit_text, quit_rect)
+
+    def _draw_scrollbar(self, display_rect, scroll_offset, scroll_max):
+        """Helper method to draw horizontal scrollbar"""
+        if scroll_max <= 0:
+            return
+
+        # Draw scrollbar track (horizontal at bottom of display rect)
+        track_margin = 5
+        scrollbar_track = pygame.Rect(
+            display_rect.x + track_margin,
+            display_rect.bottom - 15,
+            display_rect.width - (track_margin * 2),
+            10
+        )
+        pygame.draw.rect(self.screen, COLORS['LIGHT_GRAY'], scrollbar_track, border_radius=5)
+
+        # Calculate thumb size and position
+        visible_width = display_rect.width - 20
+        total_width = visible_width + scroll_max
+
+        # Thumb width proportional to visible portion
+        thumb_width = max(30, int((visible_width / total_width) * scrollbar_track.width))
+
+        # Thumb position based on scroll offset
+        max_thumb_x = scrollbar_track.width - thumb_width
+        if scroll_max > 0:
+            thumb_x = int((scroll_offset / scroll_max) * max_thumb_x)
+        else:
+            thumb_x = 0
+
+        # Draw scrollbar thumb
+        thumb_rect = pygame.Rect(
+            scrollbar_track.x + thumb_x,
+            scrollbar_track.y,
+            thumb_width,
+            scrollbar_track.height
+        )
+        pygame.draw.rect(self.screen, COLORS['GRAY'], thumb_rect, border_radius=5)

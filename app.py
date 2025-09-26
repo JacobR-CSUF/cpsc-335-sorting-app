@@ -36,12 +36,17 @@ class SortingVisualizer:
         self.array_size = SORTING_CONFIG['DEFAULT_ARRAY_SIZE']
         self.array = []
         self.sorting_array = []
+        self.array_input_active = False
+        self.array_input_text = ""
+        self.cursor_position = 0
+        self.editing_array = False
 
         # Control variables
         self.sorting = False
         self.paused = False
         self.sorted = False
         self.started = False
+        self.locked = False
         self.done_active = False
         self.speed = SORTING_CONFIG['DEFAULT_SPEED']
         self.current_indices = []
@@ -139,10 +144,16 @@ class SortingVisualizer:
 
     def generate_array(self):
         """Generate a random array for sorting"""
-        self.array = [random.randint(SORTING_CONFIG['MIN_VALUE'],
-                                    SORTING_CONFIG['MAX_VALUE'])
-                     for _ in range(self.array_size)]
+        if self.array_size == 0:
+            self.array = []
+        else:
+            self.array = [random.randint(SORTING_CONFIG['MIN_VALUE'],
+                                        SORTING_CONFIG['MAX_VALUE'])
+                         for _ in range(self.array_size)]
+
         self.sorting_array = self.array.copy()
+        self.array_input_text = str(self.array)[1:-1]  # Remove brackets for editing
+        self.cursor_position = len(self.array_input_text)
         self.sorted = False
         self.sorting = False
         self.paused = False
@@ -158,6 +169,121 @@ class SortingVisualizer:
         self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
         self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
         self.add_console_message(f"sortingapp$ Original array: {self.array}")
+
+    def update_array_from_text(self):
+        """Update array from user input text"""
+        try:
+            # Parse the input text
+            if not self.array_input_text.strip():
+                self.array = []
+                self.array_size = 0
+            else:
+                # Split by comma and convert to integers
+                elements = []
+                for item in self.array_input_text.split(','):
+                    item = item.strip()
+                    if item:
+                        value = int(item)
+                        # Clamp value to valid range
+                        value = max(SORTING_CONFIG['MIN_VALUE'],
+                                    min(SORTING_CONFIG['MAX_VALUE'], value))
+                        elements.append(value)
+
+                # Limit to max array size
+                if len(elements) > SORTING_CONFIG['MAX_ARRAY_SIZE']:
+                    elements = elements[:SORTING_CONFIG['MAX_ARRAY_SIZE']]
+                    # Update text to reflect truncation
+                    self.array_input_text = ', '.join(str(e) for e in elements)
+                    self.cursor_position = len(self.array_input_text)
+
+                self.array = elements
+                self.array_size = len(elements)
+
+            # Update other components
+            self.sorting_array = self.array.copy()
+            self.input_text = str(self.array_size)  # Update element count
+
+            # Update console
+            self.console_messages = []
+            algo_name = self.selected_algorithm.replace(" Sort", "")
+            self.add_console_message(f"sortingapp$ running [{algo_name}] sort...")
+            self.add_console_message(f"sortingapp$ utilizing array of size {self.array_size}")
+            self.add_console_message(f"sortingapp$ Original array: {self.array}")
+
+        except ValueError:
+            # Invalid input, don't update
+            pass
+
+    def handle_array_input(self, event):
+        """Handle keyboard input for array editing"""
+        if event.key == pygame.K_RETURN:
+            self.array_input_active = False
+            self.editing_array = False
+            self.update_array_from_text()
+            return
+
+        elif event.key == pygame.K_ESCAPE:
+            # Cancel editing, restore original
+            self.array_input_text = str(self.array)[1:-1] if self.array else ""
+            self.array_input_active = False
+            self.editing_array = False
+            return
+
+        elif event.key == pygame.K_BACKSPACE:
+            if self.cursor_position > 0:
+                self.array_input_text = (self.array_input_text[:self.cursor_position - 1] +
+                                         self.array_input_text[self.cursor_position:])
+                self.cursor_position -= 1
+                self.preview_array_update()
+
+        elif event.key == pygame.K_DELETE:
+            if self.cursor_position < len(self.array_input_text):
+                self.array_input_text = (self.array_input_text[:self.cursor_position] +
+                                         self.array_input_text[self.cursor_position + 1:])
+                self.preview_array_update()
+
+        elif event.key == pygame.K_LEFT:
+            self.cursor_position = max(0, self.cursor_position - 1)
+
+        elif event.key == pygame.K_RIGHT:
+            self.cursor_position = min(len(self.array_input_text), self.cursor_position + 1)
+
+        elif event.key == pygame.K_HOME:
+            self.cursor_position = 0
+
+        elif event.key == pygame.K_END:
+            self.cursor_position = len(self.array_input_text)
+
+        else:
+            # Check for valid input (numbers, comma, space)
+            if event.unicode in '0123456789, ':
+                # Check if adding this would exceed max size
+                test_text = (self.array_input_text[:self.cursor_position] +
+                             event.unicode +
+                             self.array_input_text[self.cursor_position:])
+
+                # Quick check for array size limit
+                test_elements = test_text.split(',')
+                if len(test_elements) <= SORTING_CONFIG['MAX_ARRAY_SIZE']:
+                    self.array_input_text = test_text
+                    self.cursor_position += 1
+                    self.preview_array_update()
+
+    def preview_array_update(self):
+        """Update array size preview while typing"""
+        try:
+            if not self.array_input_text.strip():
+                element_count = 0
+            else:
+                # Count valid elements
+                elements = [item.strip() for item in self.array_input_text.split(',')
+                            if item.strip() and item.strip().isdigit()]
+                element_count = min(len(elements), SORTING_CONFIG['MAX_ARRAY_SIZE'])
+
+            self.input_text = str(element_count)
+
+        except:
+            pass
 
     def add_console_message(self, message):
         """Add a message to the console output"""
@@ -222,9 +348,12 @@ class SortingVisualizer:
         self.ui.draw_header(self.width)
         self.ui.draw_input_section(self.input_rect, self.input_text, self.input_active)
 
-        needs_scroll, scroll_max = self.ui.draw_array_display(
+        # Draw editable array display
+        needs_scroll, scroll_max = self.ui.draw_editable_array_display(
             self.array_display_rect, self.array_content_rect,
-            self.sorting_array, self.array_scroll_offset, self.array_scroll_max
+            self.array, self.array_input_text, self.array_input_active,
+            self.cursor_position, self.array_scroll_offset,
+            self.array_scroll_max, self.locked, self.editing_array
         )
         if needs_scroll:
             self.array_scroll_max = max(0, scroll_max)
