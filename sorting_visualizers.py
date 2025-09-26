@@ -37,52 +37,77 @@ class SortingVisualizers:
 
     @staticmethod
     def bucket_sort_visual(sorting_array, app_instance):
-        """Generator for bucket sort visualization (adapted for integers)"""
-        n = len(sorting_array)
-        if n == 0:
+        """Bucket sort visualization generator"""
+        # Handle empty array
+        if len(sorting_array) == 0:
+            app_instance.complete_sorting()
+            app_instance.sorted = True
+            app_instance.sorting = False
+            app_instance.current_indices = []
             yield False
             return
 
-        # Find range for normalization
-        min_val = min(sorting_array)
+        # Find max value to determine number of buckets
         max_val = max(sorting_array)
-        range_val = max_val - min_val + 1
+        if max_val == 0:  # Handle all zeros case
+            app_instance.complete_sorting()
+            app_instance.sorted = True
+            app_instance.sorting = False
+            app_instance.current_indices = []
+            yield False
+            return
 
-        # Create buckets
-        bucket_count = min(n, 10)  # Use 10 buckets or less
-        buckets = [[] for _ in range(bucket_count)]
+        size = len(sorting_array)
+        buckets = [[] for _ in range(size)]
 
-        # Distribute elements into buckets
-        for i, x in enumerate(sorting_array):
+        # Put array elements in different buckets
+        for i in range(size):
             if not app_instance.sorting:
                 yield False
                 return
+
             while app_instance.paused:
                 yield True
 
-            # Normalize to bucket index
-            normalized = (x - min_val) / range_val
-            idx = min(int(bucket_count * normalized), bucket_count - 1)
-            buckets[idx].append(x)
+            index = int(size * sorting_array[i] / (max_val + 1))
+            buckets[index].append(sorting_array[i])
             app_instance.current_indices = [i]
             yield True
 
-        # Sort each bucket and reconstruct array
-        result_idx = 0
-        for bucket in buckets:
-            if bucket:
-                bucket.sort()
-                for value in bucket:
+        # Sort individual buckets using insertion sort
+        for i in range(size):
+            if len(buckets[i]) > 1:
+                for j in range(1, len(buckets[i])):
                     if not app_instance.sorting:
                         yield False
                         return
+
                     while app_instance.paused:
                         yield True
 
-                    sorting_array[result_idx] = value
-                    app_instance.current_indices = [result_idx]
-                    result_idx += 1
+                    key = buckets[i][j]
+                    k = j - 1
+                    while k >= 0 and buckets[i][k] > key:
+                        buckets[i][k + 1] = buckets[i][k]
+                        k -= 1
+                    buckets[i][k + 1] = key
                     yield True
+
+        # Concatenate all buckets into sorting_array
+        index = 0
+        for i in range(size):
+            for j in range(len(buckets[i])):
+                if not app_instance.sorting:
+                    yield False
+                    return
+
+                while app_instance.paused:
+                    yield True
+
+                sorting_array[index] = buckets[i][j]
+                app_instance.current_indices = [index]
+                index += 1
+                yield True
 
         app_instance.complete_sorting()
         app_instance.sorted = True
@@ -92,43 +117,68 @@ class SortingVisualizers:
 
     @staticmethod
     def counting_sort_visual(sorting_array, app_instance):
-        """Generator for counting sort visualization"""
-        if not sorting_array:
+        """Counting sort visualization generator"""
+        # Handle empty array
+        if len(sorting_array) == 0:
+            app_instance.complete_sorting()
+            app_instance.sorted = True
+            app_instance.sorting = False
+            app_instance.current_indices = []
             yield False
             return
 
+        # Find range of values
         max_val = max(sorting_array)
         min_val = min(sorting_array)
-        k = max_val - min_val + 1
+        range_of_elements = max_val - min_val + 1
 
-        # Counting phase
-        count = [0] * k
-        for i, num in enumerate(sorting_array):
+        # Create counting array
+        count = [0] * range_of_elements
+        output = [0] * len(sorting_array)
+
+        # Store count of each element
+        for i in range(len(sorting_array)):
             if not app_instance.sorting:
                 yield False
                 return
+
             while app_instance.paused:
                 yield True
 
-            count[num - min_val] += 1
+            count[sorting_array[i] - min_val] += 1
             app_instance.current_indices = [i]
             yield True
 
-        # Reconstruction phase
-        output_idx = 0
-        for i, freq in enumerate(count):
-            value = i + min_val
-            for _ in range(freq):
-                if not app_instance.sorting:
-                    yield False
-                    return
-                while app_instance.paused:
-                    yield True
+        # Change count[i] so that count[i] contains actual position
+        for i in range(1, len(count)):
+            count[i] += count[i - 1]
 
-                sorting_array[output_idx] = value
-                app_instance.current_indices = [output_idx]
-                output_idx += 1
+        # Build output array
+        for i in range(len(sorting_array) - 1, -1, -1):
+            if not app_instance.sorting:
+                yield False
+                return
+
+            while app_instance.paused:
                 yield True
+
+            output[count[sorting_array[i] - min_val] - 1] = sorting_array[i]
+            count[sorting_array[i] - min_val] -= 1
+            app_instance.current_indices = [i]
+            yield True
+
+        # Copy output array to sorting_array
+        for i in range(len(sorting_array)):
+            if not app_instance.sorting:
+                yield False
+                return
+
+            while app_instance.paused:
+                yield True
+
+            sorting_array[i] = output[i]
+            app_instance.current_indices = [i]
+            yield True
 
         app_instance.complete_sorting()
         app_instance.sorted = True
@@ -440,57 +490,74 @@ class SortingVisualizers:
 
     @staticmethod
     def radix_sort_visual(sorting_array, app_instance):
-        """Generator for radix sort visualization"""
-        if not sorting_array:
+        """Radix sort (LSD) visualization generator"""
+        # Handle empty array
+        if len(sorting_array) == 0:
+            app_instance.complete_sorting()
+            app_instance.sorted = True
+            app_instance.sorting = False
+            app_instance.current_indices = []
             yield False
             return
 
-        # Handle negative numbers separately
-        neg = []
-        pos = []
-        for i, x in enumerate(sorting_array):
-            if x < 0:
-                neg.append(-x)
-            else:
-                pos.append(x)
+        # Find maximum number to know number of digits
+        max_num = max(sorting_array)
 
-        # Sort positive numbers
-        if pos:
-            max_val = max(pos)
-            exp = 1
-            base = 10
+        # Do counting sort for every digit
+        exp = 1
+        while max_num // exp > 0:
+            # Counting sort for current digit
+            n = len(sorting_array)
+            output = [0] * n
+            count = [0] * 10
 
-            while max_val // exp > 0:
-                yield from SortingVisualizers._counting_sort_by_digit_visual(
-                    pos, exp, base, sorting_array, False, app_instance
-                )
-                exp *= base
+            # Store count of occurrences
+            for i in range(n):
+                if not app_instance.sorting:
+                    yield False
+                    return
 
-        # Sort negative numbers
-        if neg:
-            max_val = max(neg)
-            exp = 1
-            base = 10
+                while app_instance.paused:
+                    yield True
 
-            while max_val // exp > 0:
-                yield from SortingVisualizers._counting_sort_by_digit_visual(
-                    neg, exp, base, sorting_array, True, app_instance
-                )
-                exp *= base
-            neg.reverse()
-
-        # Reconstruct the array
-        result = [-x for x in neg] + pos
-        for i, val in enumerate(result):
-            if not app_instance.sorting:
-                yield False
-                return
-            while app_instance.paused:
+                index = sorting_array[i] // exp
+                count[index % 10] += 1
+                app_instance.current_indices = [i]
                 yield True
 
-            sorting_array[i] = val
-            app_instance.current_indices = [i]
-            yield True
+            # Change count[i] so it contains actual position
+            for i in range(1, 10):
+                count[i] += count[i - 1]
+
+            # Build output array
+            for i in range(n - 1, -1, -1):
+                if not app_instance.sorting:
+                    yield False
+                    return
+
+                while app_instance.paused:
+                    yield True
+
+                index = sorting_array[i] // exp
+                output[count[index % 10] - 1] = sorting_array[i]
+                count[index % 10] -= 1
+                app_instance.current_indices = [i]
+                yield True
+
+            # Copy output array to sorting_array
+            for i in range(n):
+                if not app_instance.sorting:
+                    yield False
+                    return
+
+                while app_instance.paused:
+                    yield True
+
+                sorting_array[i] = output[i]
+                app_instance.current_indices = [i]
+                yield True
+
+            exp *= 10
 
         app_instance.complete_sorting()
         app_instance.sorted = True
